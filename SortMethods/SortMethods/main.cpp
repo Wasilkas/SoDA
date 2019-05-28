@@ -15,7 +15,7 @@ int main()
 	priceList price_list = {};
 	inputTable(work);
 	inputPriceList(price_list);
-	inputStoreList(store);
+	inputStockList(store);
 	counts cnt = counts();
 	cout << "1 Quick sort\n"
 		<< "2 Heap sord\n"
@@ -26,27 +26,18 @@ int main()
 	cin >> n;
 	switch (n)
 	{
-	case CMD_QCK:
-		QuickSort(work, 0, work.n - 1, cnt);
-		cout << "Views: " << cnt.views << endl
-			<< "Compares: " << cnt.cmp << endl
-			<< "Moves: " << cnt.mov << endl;
+	case CMD_QCK: QuickSort(work, 0, work.n - 1, cnt);
 		break;
-	case CMD_HEAP:
-		HeapSort(work, cnt);
-		cout << "Views: " << cnt.views << endl
-			<< "Compares: " << cnt.cmp << endl
-			<< "Moves: " << cnt.mov << endl;
+	case CMD_HEAP: HeapSort(work, cnt);
 		break;
-	case CMD_SHL:
-		ShellSort(work, cnt);
-		cout << "Views: " << cnt.views << endl
-			<< "Compares: " << cnt.cmp << endl
-			<< "Moves: " << cnt.mov << endl;
+	case CMD_SHL: ShellSort(work, cnt);
 		break;
 	default:
 		break;
 	}
+	cout << "Views: " << cnt.views << endl
+		<< "Compares: " << cnt.cmp << endl
+		<< "Moves: " << cnt.mov << endl;
 	print(work, "OrderedTable");
 	Unite(store, work, price_list);
 	print(store, "STORE");
