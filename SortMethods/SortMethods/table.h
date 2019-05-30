@@ -39,9 +39,8 @@ struct priceList                     // Прейскурант
 	int n = 0;
 };
 
-void inputTable(table &);
+void inputUnorderedTable(table &);
 void inputPriceList(priceList &);
-void inputStockList(table &);
 void Unite(table &, table &);
 void QuickSort(table &, const int &, const int &, counts &);
 void HeapSort(table &, counts &);

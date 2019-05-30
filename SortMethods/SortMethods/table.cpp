@@ -1,161 +1,141 @@
 #include <iostream> 
 #include "table.h" 
 
-void inputTable(table & t)
+void inputTable(table & t, const string &fname)
 {
-	ifstream f("work.txt");
+	ifstream f(fname + ".txt");
 	if (f.is_open())
 		if (f.peek() != EOF)
 		{
-			bool isFull = false;
-			while (!f.eof() && !isFull)
-				if (t.n < Nmax)
-				{
-					product prd;
-					int i;
-					f >> prd.key >> prd.name >> prd.amt;
-					for (i = 0; i < t.n && t.elem[i].key != prd.key; i++);
-					if (i == t.n)
+			bool NotAll = false;
+			while (!f.eof())											// Пока файл не закончился
+			{
+				product prd;
+				int i;
+				f >> prd.key >> prd.name >> prd.amt;					// Считали товар
+				for (i = 0; i < t.n && t.elem[i].key != prd.key; i++);	// Проверка есть ли такой товар в таблице
+				if (i == t.n)											// Если нет и таблица не полна то записать в конец
+					if (t.n < Nmax)
 						t.elem[t.n++] = prd;
 					else
-						t.elem[i].amt += prd.amt;
-				}
+						NotAll = true;									// Иначе отметить что не все элементы занесены в таблицу
 				else
-				{
-					isFull = true;
-					cout << "Table 'Work' is full.\n";
-				}
-			if (f.eof())
-				cout << "All products are included in the table 'Work'.\n";
-			else
+					t.elem[i].amt += prd.amt;							// Если такой элемент уже есть сложить количества
+			}
+			if (NotAll)
 				cout << "Not all products are included in the table 'Work'.\n";
+			else
+				cout << "All products are included in the table 'Work'.\n";
 		}
-		else cout << "File 'work.txt' is empty.\n";
-	else cout << "File 'work.txt' could not be opened.\n";
+		else cout << "File '" + fname + ".txt' is empty.\n";
+	else cout << "File '" + fname + ".txt' could not be opened.\n";
 	f.close();
 }
 
-void inputPriceList(priceList & t)
+void inputPriceList(priceList &t, const string &fname)
 {
-	ifstream f("Price-list.txt");
+	ifstream f(fname + ".txt");
 	if (f.is_open())
 		if (f.peek() != EOF)
 		{
-			bool isFull = false;
-			while (!f.eof() && !isFull)
-				if (t.n < Nmax)
-				{
-					price prd;
-					f >> prd.key >> prd.value;
-					t.elem[t.n++] = prd;
-				}
-				else
-				{
-					isFull = true;
-					cout << "Table 'Price-list' is full.\n";
-				}
+			while (!f.eof() && t.n < Nmax)							// Пока файл не закончился и таблица не заполнилась
+			{
+				price prd;
+				f >> prd.key >> prd.value;
+				t.elem[t.n++] = prd;								// Добавляем элемент в конец таблицы
+			}
 			if (f.eof())
 				cout << "All products are included in the table 'Price-list'.\n";
 			else
 				cout << "Not all products are included in the table 'Price-list'.\n";
 		}
-		else cout << "File 'Price_list.txt' is empty.\n";
-	else cout << "File 'Price_list.txt' could not be opened.\n";
+		else cout << "File '" + fname + ".txt' is empty.\n";
+	else cout << "File '" + fname + ".txt' could not be opened.\n";
 	f.close();
 }
 
-void inputStockList(table & t)
+void inputStock(table & t, const string &fname)
 {
-	ifstream f("Stock.txt");
+	ifstream f(fname + ".txt");
 	if (f.is_open())
 		if (f.peek() != EOF)
 		{
 			bool isFull = false;
-			while (!f.eof() && !isFull)
-				if (t.n < Nmax)
-				{
-					product prd;
-					f >> prd.key >> prd.name >> prd.amt >> prd.value;
-					t.elem[t.n++] = prd;
-				}
-				else
-				{
-					isFull = true;
-					cout << "Table is full 'Stock'.\n";
-				}
+			while (!f.eof() && t.n < Nmax)
+			{
+				product prd;
+				f >> prd.key >> prd.name >> prd.amt >> prd.value;
+				t.elem[t.n++] = prd;
+			}
 			if (f.eof())
 				cout << "All products are included in the table 'Stock'.\n";
 			else
 				cout << "Not all products are included in the table 'Stock'.\n";
 		}
-		else cout << "File 'Store.txt' is empty.\n";
-	else cout << "File 'Store.txt' could not be opened.\n";
+		else cout << "File '" + fname + ".txt' is empty.\n";
+	else cout << "File '" + fname + ".txt' could not be opened.\n";
 	f.close();
 }
 
 float ValueSearch(const priceList &t, const string &code, int &c)
 {
 	int i = c, j = t.n - 1;
-	while (i != j)
+	while (i <= j)
 	{
 		c = (i + j) / 2;
-		if (code <= t.elem[c].key)
-			j = c;
+		if (code < t.elem[c].key)
+			j = c - 1;
 		else
-			i = c + 1;
+			if (code > t.elem[c].key)
+				i = c + 1;
+			else
+				return (t.elem[c].value);
 	}
-	c++;
-	if (t.elem[c].key == code)
-	{
-		return t.elem[c].value;
-	}
-	else
-		return -1;
+	return -1;
 }
 
 void Unite(table & dest, table &from, const priceList &p)
 {
 	int n = 0, c = 0;
 	float v;
-	bool NotAll = false;
+	bool NotAll = false, isFound = false;
 	for (int k = 0; k != from.n; k++)
 	{
 		int i = c, j = dest.n - 1;
-		while (i != j)
+		while (i <= j && !isFound)
 		{
 			c = (i + j) / 2;
-			if (dest.elem[c].key >= from.elem[k].key)
-				j = c;
+			if (dest.elem[c].key > from.elem[k].key)
+				j = c - 1;
 			else
-				i = c + 1;
-		}
-		if (dest.elem[c].key == from.elem[k].key)
-		{
-			dest.elem[c].amt += from.elem[k].amt;
-			c++;
-		}
-		else
-			if (dest.n != Nmax)
-			{
-				v = ValueSearch(p, from.elem[k].key, n);
 				if (dest.elem[c].key < from.elem[k].key)
-				{
-					for (int a = dest.n; a > c; a--)
-						dest.elem[a] = dest.elem[a - 1];
-					c++;
-				}
+					i = c + 1;
 				else
 				{
-					for (int a = dest.n; a > c + 1; a--)
-						dest.elem[a] = dest.elem[a - 1];
-					c += 2;
+					dest.elem[c].amt += from.elem[k].amt;
+					c++;
+					isFound = true;
 				}
-				dest.elem[c] = from.elem[k];
-				dest.elem[c].value = v;
-				dest.n++;
+		}
+		if (dest.n != Nmax && !isFound)
+		{
+			v = ValueSearch(p, from.elem[k].key, n);
+			if (dest.elem[c].key < from.elem[k].key)
+			{
+				for (int a = dest.n; a > c; a--)
+					dest.elem[a] = dest.elem[a - 1];
 			}
 			else
-				NotAll = true;
+			{
+				for (int a = dest.n; a > c + 1; a--)
+					dest.elem[a] = dest.elem[a - 1];
+			}
+			dest.elem[c] = from.elem[k];
+			dest.elem[c].value = v;
+			dest.n++;
+		}
+		else
+			NotAll = true;
 	}
 	if (NotAll)
 		cout << "Table 'Stock' is full! Not all products from 'Work' are included!";
@@ -196,7 +176,7 @@ void Pyramid(table &t, counts &cnt, const int &i, const int &size)
 {
 	int child, j = i;
 	product prd = t.elem[i];
-	static bool inv = true;
+	bool inv = true;
 	while (j <= size / 2 - 1 && inv)
 	{
 		child = 2 * j + 1;

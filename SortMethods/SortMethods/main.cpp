@@ -13,9 +13,9 @@ int main()
 	table work = {};
 	table store = {};
 	priceList price_list = {};
-	inputTable(work);
-	inputPriceList(price_list);
-	inputStockList(store);
+	inputUnorderedTable(work, "work");
+	inputOrderedTable(price_list, "price-list");
+	inputOrderedTable(store, "stock");
 	counts cnt = counts();
 	cout << "1 Quick sort\n"
 		<< "2 Heap sord\n"
