@@ -3,44 +3,53 @@
 
 enum Commands
 {
-	CMD_QCK = 1,
+	CMD_QCK_LIB= 1,
+	CMD_QCK,
 	CMD_HEAP,
 	CMD_SHL
 };
 
 int main()
 {
-	table work = {};
-	table store = {};
-	priceList price_list = {};
-	inputUnorderedTable(work, "work");
-	inputOrderedTable(price_list, "price-list");
-	inputOrderedTable(store, "stock");
+	wTable work("work");
+	sTable stock("Stock");
+	priceList price_list("price-list");
 	counts cnt = counts();
-	cout << "1 Quick sort\n"
-		<< "2 Heap sord\n"
-		<< "3 Shellsort\n"
-		<< "4 Exit\n"
-		<< "Enter a kind of sort:";
-	int n;
-	cin >> n;
-	switch (n)
+	bool inv = false;
+	for (size_t i = 1; i < work.n && !inv; i++)
+		inv = work.elem[i].key < work.elem[i - 1].key;
+	if (inv)
 	{
-	case CMD_QCK: QuickSort(work, 0, work.n - 1, cnt);
-		break;
-	case CMD_HEAP: HeapSort(work, cnt);
-		break;
-	case CMD_SHL: ShellSort(work, cnt);
-		break;
-	default:
-		break;
+		cout << "1 Quick sort from Standard C Library\n"
+			<< "2 Quick sort"
+			<< "3 Heap sord\n"
+			<< "4 Shellsort\n"
+			<< "5 Exit\n"
+			<< "Enter a kind of sort:";
+		int n;
+		cin >> n;
+		switch (n)
+		{
+		case CMD_QCK_LIB: qsort(&work, work.n, sizeof(wProduct), compare);
+			break;
+		case CMD_QCK: QuickSort(work, 0, work.n - 1, cnt);
+			break;
+		case CMD_HEAP: HeapSort(work, cnt);
+			break;
+		case CMD_SHL: ShellSort(work, cnt);
+			break;
+		default:
+			break;
+		}
 	}
+	else
+		cout << "Table 'Work' is already ordered\n";
 	cout << "Views: " << cnt.views << endl
 		<< "Compares: " << cnt.cmp << endl
 		<< "Moves: " << cnt.mov << endl;
-	print(work, "OrderedTable");
-	Unite(store, work, price_list);
-	print(store, "STORE");
+	printWork(work, "OrderedTable");
+	Unite(stock, work, price_list);
+	printStock(stock, "Result");
 	system("PAUSE");
 	return 0;
 }

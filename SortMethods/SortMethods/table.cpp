@@ -1,81 +1,7 @@
-#include <iostream> 
+#include <iostream>
+#include <random>
+#include <string.h>
 #include "table.h" 
-
-void inputTable(table & t, const string &fname)
-{
-	ifstream f(fname + ".txt");
-	if (f.is_open())
-		if (f.peek() != EOF)
-		{
-			bool NotAll = false;
-			while (!f.eof())											// Пока файл не закончился
-			{
-				product prd;
-				int i;
-				f >> prd.key >> prd.name >> prd.amt;					// Считали товар
-				for (i = 0; i < t.n && t.elem[i].key != prd.key; i++);	// Проверка есть ли такой товар в таблице
-				if (i == t.n)											// Если нет и таблица не полна то записать в конец
-					if (t.n < Nmax)
-						t.elem[t.n++] = prd;
-					else
-						NotAll = true;									// Иначе отметить что не все элементы занесены в таблицу
-				else
-					t.elem[i].amt += prd.amt;							// Если такой элемент уже есть сложить количества
-			}
-			if (NotAll)
-				cout << "Not all products are included in the table 'Work'.\n";
-			else
-				cout << "All products are included in the table 'Work'.\n";
-		}
-		else cout << "File '" + fname + ".txt' is empty.\n";
-	else cout << "File '" + fname + ".txt' could not be opened.\n";
-	f.close();
-}
-
-void inputPriceList(priceList &t, const string &fname)
-{
-	ifstream f(fname + ".txt");
-	if (f.is_open())
-		if (f.peek() != EOF)
-		{
-			while (!f.eof() && t.n < Nmax)							// Пока файл не закончился и таблица не заполнилась
-			{
-				price prd;
-				f >> prd.key >> prd.value;
-				t.elem[t.n++] = prd;								// Добавляем элемент в конец таблицы
-			}
-			if (f.eof())
-				cout << "All products are included in the table 'Price-list'.\n";
-			else
-				cout << "Not all products are included in the table 'Price-list'.\n";
-		}
-		else cout << "File '" + fname + ".txt' is empty.\n";
-	else cout << "File '" + fname + ".txt' could not be opened.\n";
-	f.close();
-}
-
-void inputStock(table & t, const string &fname)
-{
-	ifstream f(fname + ".txt");
-	if (f.is_open())
-		if (f.peek() != EOF)
-		{
-			bool isFull = false;
-			while (!f.eof() && t.n < Nmax)
-			{
-				product prd;
-				f >> prd.key >> prd.name >> prd.amt >> prd.value;
-				t.elem[t.n++] = prd;
-			}
-			if (f.eof())
-				cout << "All products are included in the table 'Stock'.\n";
-			else
-				cout << "Not all products are included in the table 'Stock'.\n";
-		}
-		else cout << "File '" + fname + ".txt' is empty.\n";
-	else cout << "File '" + fname + ".txt' could not be opened.\n";
-	f.close();
-}
 
 float ValueSearch(const priceList &t, const string &code, int &c)
 {
@@ -94,13 +20,14 @@ float ValueSearch(const priceList &t, const string &code, int &c)
 	return -1;
 }
 
-void Unite(table & dest, table &from, const priceList &p)
+void Unite(sTable &dest, wTable &from, const priceList &p)
 {
 	int n = 0, c = 0;
 	float v;
 	bool NotAll = false, isFound = false;
 	for (int k = 0; k != from.n; k++)
 	{
+		isFound = false;
 		int i = c, j = dest.n - 1;
 		while (i <= j && !isFound)
 		{
@@ -120,7 +47,7 @@ void Unite(table & dest, table &from, const priceList &p)
 		if (dest.n != Nmax && !isFound)
 		{
 			v = ValueSearch(p, from.elem[k].key, n);
-			if (dest.elem[c].key < from.elem[k].key)
+			if (dest.elem[c].key > from.elem[k].key)
 			{
 				for (int a = dest.n; a > c; a--)
 					dest.elem[a] = dest.elem[a - 1];
@@ -129,13 +56,14 @@ void Unite(table & dest, table &from, const priceList &p)
 			{
 				for (int a = dest.n; a > c + 1; a--)
 					dest.elem[a] = dest.elem[a - 1];
+				c++;
 			}
-			dest.elem[c] = from.elem[k];
-			dest.elem[c].value = v;
+			dest.elem[c] = { from.elem[k].key , from.elem[k].name, from.elem[k].amt, v };
 			dest.n++;
 		}
 		else
-			NotAll = true;
+			if (dest.n == Nmax)
+				NotAll = true;
 	}
 	if (NotAll)
 		cout << "Table 'Stock' is full! Not all products from 'Work' are included!";
@@ -143,18 +71,18 @@ void Unite(table & dest, table &from, const priceList &p)
 		cout << "All products from 'Work' are included to 'Stock'!";
 }
 
-void QuickSort(table & t, const int& b, const int& e, counts & cnt)
+void QuickSort(wTable &t, const int &b, const int &e, counts &cnt)
 {
 	if (e - b > 0)
 	{
 		int m = (b + e) / 2;
-		product prd;
+		wProduct prd;
 		int i = 0, j = 0;
 		while (i <= j)
 		{
-			for (i = b; t.elem[i].key < t.elem[m].key; i++,cnt.cmp++);
+			for (i = b; t.elem[i].key < t.elem[m].key; i++, cnt.cmp++);
 			cnt.cmp++;
-			for (j = e; t.elem[j].key > t.elem[m].key; j--,cnt.cmp++);
+			for (j = e; t.elem[j].key > t.elem[m].key; j--, cnt.cmp++);
 			cnt.cmp++;
 			if (i <= j)
 			{
@@ -172,10 +100,10 @@ void QuickSort(table & t, const int& b, const int& e, counts & cnt)
 	}
 }
 
-void Pyramid(table &t, counts &cnt, const int &i, const int &size)
+void Pyramid(wTable &t, counts &cnt, const int &i, const int &size)
 {
 	int child, j = i;
-	product prd = t.elem[i];
+	wProduct prd = t.elem[i];
 	bool inv = true;
 	while (j <= size / 2 - 1 && inv)
 	{
@@ -197,9 +125,9 @@ void Pyramid(table &t, counts &cnt, const int &i, const int &size)
 	cnt.mov += 2;
 }
 
-void HeapSort(table & t, counts & cnt)
+void HeapSort(wTable &t, counts &cnt)
 {
-	product prd;
+	wProduct prd;
 	for (int i = t.n / 2 - 1; i >= 0; i--)
 		Pyramid(t, cnt, i, t.n);
 	++cnt.views;
@@ -213,15 +141,16 @@ void HeapSort(table & t, counts & cnt)
 	}
 }
 
-void ShellSort(table & t, counts & cnt)
+void ShellSort(wTable &t, counts &cnt)
 {
 	/*static const int step[] = { 1,4,10,23,57,132,301,701,1750 };*/
-	product temp;
-	int k, h = 1;
+	wProduct temp;
+	int k;
+	size_t h = 1;
 	for (h = 1; h <= t.n / 9; h = 2 * h + 1);
 	/*for (num = 0; step[num + 1] < t.n - 1; num++);*/
 	for (; h > 0; h = (h - 1) / 2, cnt.views++)
-		for (int j = h; j < t.n; j++)
+		for (size_t j = h; j < t.n; j++)
 		{
 			temp = t.elem[j];
 			for (k = j - h; k >= 0 && temp.key < t.elem[k].key; k -= h, cnt.cmp++, cnt.mov++)
@@ -232,16 +161,108 @@ void ShellSort(table & t, counts & cnt)
 		}
 }
 
-void print(const table & t, const string & s)
+void ShellSort(priceList &t)
+{
+	/*static const int step[] = { 1,4,10,23,57,132,301,701,1750 };*/
+	price temp;
+	int k;
+	size_t h = 1;
+	for (h = 1; h <= t.n / 9; h = 2 * h + 1);
+	/*for (num = 0; step[num + 1] < t.n - 1; num++);*/
+	for (; h > 0; h = (h - 1) / 2)
+		for (size_t j = h; j < t.n; j++)
+		{
+			temp = t.elem[j];
+			for (k = j - h; k >= 0 && temp.key < t.elem[k].key; k -= h, cnt.cmp++, cnt.mov++)
+				t.elem[k + h] = t.elem[k];
+			cnt.cmp++;
+			t.elem[k + h] = temp;
+			cnt.mov += 2;
+		}
+}
+
+int compare(const void *arg1, const void *arg2)
+{
+	wProduct t1 = *(wProduct *)arg1;
+	wProduct t2 = *(wProduct *)arg2;
+	return stricmp(t1.key.c_str(), t2.key.c_str());
+}
+
+void printWork(const wTable &t, const string &s)
 {
 	ofstream out(s + ".txt");
-	for (int i = 0; i < t.n; i++)
+	out << "№\t" << "CIPHER\t\t" << "NAME\t" << "AMOUNT\n";
+	for (size_t i = 0; i < t.n; i++)
 	{
 		out << i << "\t"
 			<< t.elem[i].key << "\t"
 			<< t.elem[i].name << "\t"
-			<< t.elem[i].amt << "\t"
-			<< t.elem[i].value << endl;
+			<< t.elem[i].amt << endl;
 	}
 	out.close();
+}
+
+void printStock(const sTable &t, const string &s)
+{
+	ofstream out(s + ".txt");
+	out << "№\t" << "CIPHER\t\t" << "NAME\t" << "AMOUNT\t" << "COST\n";
+	for (size_t i = 0; i < t.n; i++)
+		out << i << "\t"
+		<< t.elem[i].key << "\t"
+		<< t.elem[i].name << "\t"
+		<< t.elem[i].amt << "\t"
+		<< t.elem[i].value << endl;
+}
+
+void generator(wTable &wTbl, priceList &pl, sTable &sTbl)
+{
+	//ofstream work(wname + ".txt");
+	//ofstream price_list(plname + ".txt");
+	//ofstream stock(sname + ".txt");
+	
+	ifstream name("Names.txt");
+	string A[NameSize] = {};
+	string s = "";
+
+	if (name.is_open())
+		for (int i = 0; !name.eof(); i++)
+			name >> A[i];
+	else
+		cout << "File 'Names.txt' could not be opened.\n";
+
+	int n = 0;
+
+	cout << "Enter size of table 'Work' and table 'Price_list': ";
+	cin >> n;
+
+	random_device rd;
+	mt19937 gen(rd());
+	uniform_int_distribution<> ltr('a', 'z');
+	uniform_int_distribution<> dgt('0', '9');
+	uniform_int_distribution<> ltrOrDgt(false, true);
+	uniform_int_distribution<> nm(0, 77);
+	uniform_int_distribution<> amt(1, 200);
+	uniform_real_distribution<> val(1, 200);
+
+	if (n <= Nmax)
+		for (int i = 0; i < n; i++)
+		{
+			for (int j = 0; j < keyLen; j++)
+			{
+				if (ltrOrDgt(gen))
+					s += ltr(gen);
+				else
+					s += dgt(gen);
+			}
+			wProduct wPrd(s, A[nm(gen)], amt(gen));
+			wTbl.elem[i] = wPrd;
+			wTbl.n++;
+			price wPrice(s, val(gen));
+			pl.elem[i] = wPrice;
+			pl.n++;
+			ShellSort(pl);
+		}
+
+	cout << "Enter size of table 'Stock': ";
+	cin >> n;
 }
